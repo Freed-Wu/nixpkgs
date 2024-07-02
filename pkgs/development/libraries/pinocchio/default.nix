@@ -6,6 +6,7 @@
 , eigen
 , example-robot-data
 , collisionSupport ? !stdenv.isDarwin
+, console-bridge
 , jrl-cmakemodules
 , hpp-fcl
 , urdfdom
@@ -24,8 +25,15 @@ stdenv.mkDerivation (finalAttrs: {
     hash = "sha256-h4NzfS27+jWyHbegxF+pgN6JzJdVAoM16J6G/9uNJc4=";
   };
 
-  # test failure, ref https://github.com/stack-of-tasks/pinocchio/issues/2277
-  prePatch = lib.optionalString (stdenv.isLinux && stdenv.isAarch64) ''
+  prePatch = ''
+    # test failure, ref https://github.com/stack-of-tasks/pinocchio/issues/2304
+    substituteInPlace unittest/CMakeLists.txt \
+      --replace-fail "add_pinocchio_unit_test(contact-cholesky)" ""
+  '' + lib.optionalString (stdenv.isLinux && stdenv.isAarch64) ''
+    # test failure, ref https://github.com/stack-of-tasks/pinocchio/issues/2304
+    substituteInPlace unittest/CMakeLists.txt \
+      --replace-fail "add_pinocchio_unit_test(contact-models)" ""
+    # test failure, ref https://github.com/stack-of-tasks/pinocchio/issues/2277
     substituteInPlace unittest/algorithm/utils/CMakeLists.txt \
       --replace-fail "add_pinocchio_unit_test(force)" ""
   '';
@@ -44,6 +52,7 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   propagatedBuildInputs = [
+    console-bridge
     jrl-cmakemodules
     urdfdom
   ] ++ lib.optionals (!pythonSupport) [
